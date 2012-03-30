@@ -37,14 +37,6 @@ module GraphModel
 
     # The attribute name
     #
-    # @return [String] the attribute name
-    #
-    def to_s
-      name.to_s
-    end
-
-    # The attribute name
-    #
     # @return [Symbol] the attribute name
     #
     def to_sym
