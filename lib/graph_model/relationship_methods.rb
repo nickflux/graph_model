@@ -36,10 +36,7 @@ module GraphModel
         
         # get the relationship object
         # for relationship :friends - get_friends_relationship(other_node)
-        define_method "get_#{relationship_definition.name.to_s}_relationship" do |other_node| do
-          
-          # TODO: check that this works
-          raise GraphModel::RelationshipError, "This is not done yet"
+        define_method "get_#{relationship_definition.name.to_s}_relationship" do |other_node|
           
           if relationship_definition.direction == :outgoing
             script  = "g.v(#{self.id}).outE.filter{it.label == '#{relationship_definition.name.to_s}'}.inV.filter{it.id == #{other_node.id}}.back(2).id"
@@ -60,10 +57,10 @@ module GraphModel
         # add a new node object to the relationship
         # for relationship :friends - add_friends(other_node)
         define_method "add_#{relationship_definition.name.to_s}" do |other_node|
-        
+          
           if relationship_definition[:only] && !relationship_definition[:only].include?(other_node.class)
             msg = "cannot add a node of type #{other_node.class.to_s} to the #{relationship_definition.name.to_s} relationship. "
-            msg +=  "Only nodes of type #{relationship_definition[:only].map{|klass| klass.to_s}.join(' or ')} allowed."
+            msg +=  "Only #{relationship_definition[:only].map{|klass| klass.to_s}.join(' or ')} nodes allowed."
             raise GraphModel::RelationshipError, msg
           end
         
@@ -76,12 +73,13 @@ module GraphModel
         # for relationship :friends - remove_friends(other_node)
         define_method "remove_#{relationship_definition.name.to_s}" do |other_node|
         
-          # TODO: check that the relationship exists
-        
-          raise GraphModel::RelationshipError, "This is not done yet"
-          
-          relationship  = send("get_#{relationship_definition.name.to_s}_relationship")
-          relationship.del
+          relationship  = send("get_#{relationship_definition.name.to_s}_relationship", other_node)
+          if relationship
+            relationship.del
+            return true
+          else
+            raise GraphModel::RelationshipError, "This relationship does not exist"
+          end
           
         end
       

@@ -32,11 +32,14 @@ module GraphModel
       
       def build_object_from_neo4j(neo4j_object)
         
+        return false unless neo4j_object.object_type == name
+        
         new_obj               = new
         new_obj.neo4j         = neo4j_object
       
         # assign attributes
         attributes_to_assign  = attributes.keys
+        
         attributes_to_assign.each do |attribute|
           new_obj[attribute.to_sym] = new_obj.neo4j[attribute.to_sym]
         end
@@ -50,8 +53,10 @@ module GraphModel
     
       def create(new_attributes = {})
         
-        new_attributes  = allowed_attributes(new_attributes)
-        new_obj         = new(attributes)
+        new_attributes      = allowed_attributes(new_attributes)
+        related_attributes  = related_attributes(new_attributes)
+        
+        new_obj             = new(new_attributes)
       
         # check for invalid attributes
         if new_obj.valid?
@@ -78,6 +83,10 @@ module GraphModel
     
       def last
         all.last
+      end
+    
+      def count
+        all.size
       end
       
       def method_missing(meth, *args, &block)
@@ -161,10 +170,12 @@ module GraphModel
           $neo.set_node_properties(neo4j, new_attributes)
           
           # relationship creation
+          # the assumption here is that all relationships are one-to-one
+          # as far as Neography / Neo4J is concerned this needn't be the case, but it's a good starting point
           self.class.relationships.each do |relationship_definition|
             relationship_definition[:only].each do |related_klass|
               realtionship_keys = related_klass.attributes.keys.map{|a| "#{related_klass.to_s.underscore}_#{a}"} & related_attributes.keys
-              # TODO: start here
+              
               if realtionship_keys.size > 0
                 realtionship_keys.each do |realtionship_key|
                   related_attribute_key   = realtionship_key.gsub("#{related_klass.to_s.underscore}_", "")
@@ -175,9 +186,23 @@ module GraphModel
                   # if this related object does not exist yet create it
                   new_related_object  ||= related_klass.create(related_attribute_key => related_attributes[realtionship_key])
                   
+                  # does the relationship exist yet?
+                  if self.send("#{relationship_definition.name.to_s}_nodes").count > 0
+                    # if the relationship already with the new_related_object, do nothing
+                    # otherwise delete the rlationship and add the new_related_object
+                    current_related_object = self.send("#{relationship_definition.name.to_s}_nodes").first
+                    unless current_related_object == new_related_object
+                      self.send("remove_#{relationship_definition.name.to_s}", current_related_object)
+                      self.send("add_#{relationship_definition.name.to_s}", new_related_object)
+                    end
+                  else
+                    # a relationship named 'relationship_definition.name' does not exist - create it
+                    self.send("add_#{relationship_definition.name.to_s}", new_related_object)
+                  end
+                  
                 end
               else
-                #puts "nothing to do for #{relationship_definition.name}"
+                puts "nothing to do for #{relationship_definition.name}"
               end
             end
           end
