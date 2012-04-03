@@ -32,7 +32,7 @@ describe GraphModel::RelationshipMethods do
     
     it "should create a relationship between two nodes" do
       author.add_written(entry)
-      $neo.execute_script("g.v(#{author.id}).out('written').id").first.should == entry.id
+      GraphModel.configuration.conn.execute_script("g.v(#{author.id}).out('written').id").first.should == entry.id
     end
     
     it "should raise an exception if try to create a relationship between two nodes of the wrong type" do

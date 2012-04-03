@@ -26,11 +26,11 @@ RSpec.configure do |config|
   config.run_all_when_everything_filtered = true
   
   config.before(:each) do
-    $neo.clean_database("yes_i_really_want_to_clean_the_database")
+    GraphModel.configuration.conn.clean_database("yes_i_really_want_to_clean_the_database")
   end
 
   config.after(:all) do
-    $neo.clean_database("yes_i_really_want_to_clean_the_database")
+    GraphModel.configuration.conn.clean_database("yes_i_really_want_to_clean_the_database")
   end
   
 end
