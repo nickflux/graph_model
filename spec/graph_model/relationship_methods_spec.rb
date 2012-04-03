@@ -2,28 +2,60 @@ require 'spec_helper'
 
 describe GraphModel::RelationshipMethods do
     
-  let(:author)  { Author.create(build(:author).attributes) }
-  let(:entry)   { Entry.create(build(:entry).attributes) }
+  let(:author)      { Author.create(build(:author).attributes) }
+  let(:author_new)  { Author.new }
+  let(:entry)       { Entry.create(build(:entry).attributes) }
   
   describe "relationship_out" do
     
-    it "have the expected defined methods" do
-      author.respond_to?(:written).should be_true
-      author.respond_to?(:get_written_relationship).should be_true
-      author.respond_to?(:written_nodes).should be_true
-      author.respond_to?(:add_written).should be_true
-      author.respond_to?(:remove_written).should be_true
+    context "persisted node" do
+    
+      it "have the expected defined methods" do
+        author.respond_to?(:written).should be_true
+        author.respond_to?(:get_written_relationship).should be_true
+        author.respond_to?(:written_nodes).should be_true
+        author.respond_to?(:add_written).should be_true
+        author.respond_to?(:remove_written).should be_true
+      end
+    
+      it "relationship method should be a NodeTraverser object" do
+        author.written.class.should be(Neography::NodeTraverser)
+      end
+    
+      it "have the expected defined convenience methods based on the [:only] option" do
+        author.respond_to?(:entries).should be_true
+        author.respond_to?(:entry).should be_true
+        author.respond_to?(:entry_title).should be_true
+        author.respond_to?(:entry_title=).should be_true
+      end
+      
     end
     
-    it "relationship method should be a NodeTraverser object" do
-      author.written.class.should be(Neography::NodeTraverser)
-    end
+    context "new node" do
     
-    it "have the expected defined convenience methods based on the [:only] option" do
-      author.respond_to?(:entries).should be_true
-      author.respond_to?(:entry).should be_true
-      author.respond_to?(:entry_title).should be_true
-      author.respond_to?(:entry_title=).should be_true
+      it "have the expected defined methods" do
+        author_new.respond_to?(:written).should be_true
+        author_new.respond_to?(:get_written_relationship).should be_true
+        author_new.respond_to?(:written_nodes).should be_true
+        author_new.respond_to?(:add_written).should be_true
+        author_new.respond_to?(:remove_written).should be_true
+      end
+    
+      it "relationship method should be a NodeTraverser object" do
+        author_new.written.class.should be(Neography::NodeTraverser)
+      end
+    
+      it "have the expected defined convenience methods based on the [:only] option" do
+        author_new.respond_to?(:entries).should be_true
+        author_new.respond_to?(:entry).should be_true
+        author_new.respond_to?(:entry_title).should be_true
+        author_new.respond_to?(:entry_title=).should be_true
+      end
+      
+      it "should return nil for convenience method", :focus do
+        author_new.entry_title.should be_nil
+      end
+      
     end
     
   end

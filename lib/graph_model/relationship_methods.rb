@@ -92,13 +92,21 @@ module GraphModel
             # get all the node objects for this klass
             # for relationship :friends that are Doctor type - doctors
             define_method klass.to_s.tableize do
-              send("#{relationship_definition.name.to_s}_nodes")
+              if related_nodes = send("#{relationship_definition.name.to_s}_nodes")
+                related_nodes
+              else
+                []
+              end
             end
           
             # get first node objects for this klass
             # for relationship :friends that are Doctor type - doctor
             define_method klass.to_s.underscore do
-              send(klass.to_s.tableize).first
+              if related_node = send(klass.to_s.tableize).first
+                related_node
+              else
+                klass.new
+              end
             end
           
             # convenience methods for creating related form inputs
@@ -159,7 +167,7 @@ module GraphModel
             # if this related object does not exist yet create it
             new_related_object  ||= related_klass.create(related_attribute_key => related_attributes[realtionship_key])
             
-            make_relationship(relationship_definition, new_related_object)
+            make_relationship(relationship_definition, new_related_object) if new_related_object.persisted?
  
           else
             # nothing to do for `relationship_definition.name`

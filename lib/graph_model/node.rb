@@ -143,6 +143,8 @@ module GraphModel
     module InstanceMethods
       
       def initialize(*args)
+        self.neo4j        = Neography::Node.new
+        neo4j.neo_server  = GraphModel.configuration.conn
         super(*args)
       end
     
