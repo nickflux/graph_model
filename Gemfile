@@ -4,4 +4,4 @@ source "http://rubygems.org"
 gemspec
 
 # for development
-gem 'neography', :git => "git@github.com:nickflux/neography.git"#:path => "../gems/neography"
+#gem 'neography', :git => "git@github.com:nickflux/neography.git"#:path => "../gems/neography"

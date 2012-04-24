@@ -21,15 +21,17 @@ module GraphModel
 
     # Creates a new RelationshipDefinition
     #
-    # @example Create an attribute defintion
-    #   RelationshipDefinition.new(:amount)
+    # @example Create an relationship defintion
+    #   RelationshipDefinition.new(:outgoing, 'friends', {:with => Person, :on_field => :name})
     #
-    # @param [Symbol, String, #to_sym] name attribute name
+    # @param [Symbol, String, #to_sym] relationship name
     #
     # @return [GraphModel::RelationshipDefinition]
     #
     def initialize(direction, name, options={})
       raise TypeError, "can't convert #{name.class} into Symbol" unless name.respond_to? :to_sym
+      raise ArgumentError, "relationship #{name} must contain :with option" unless options.keys.include?(:with)
+      raise ArgumentError, "relationship #{name} must contain :on_field option" unless options.keys.include?(:on_field)
       @direction  = direction.to_sym
       @name       = name.to_sym
       @options    = options

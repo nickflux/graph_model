@@ -29,20 +29,52 @@ describe GraphModel::Node do
       neo4j_obj.respond_to?(:no_attr).should be_false
     end
     
-    it "adds a related object using a related field finder - new object" do
-      attrs = {:author_name => "Judy Newbie", :title => "new title"}
+    it "adds a related object - new object" do
+      attrs = {:authors => {"0" => {:name => "Judy Newbie"}}, :title => "new title"}
       lambda do
         @entry = Entry.create(attrs)
       end.should change(Author, :count).by(1)
-      Entry.find(@entry.id).author.name.should == "Judy Newbie"
+      Entry.find(@entry.id).authors.first.name.should == "Judy Newbie"
     end
     
-    it "adds a related object using a related field finder - existing object" do
-      attrs = {:author_name => author.name, :title => "new title"}
+    it "adds a related object with extra attributes" do
+      attrs = {:authors => {"0" => {:name => "Judy Newbie", :age => 56}}, :title => "new title"}
+      entry = Entry.create(attrs)
+      Entry.find(entry.id).authors.first.name.should == "Judy Newbie"
+      Entry.find(entry.id).authors.first.age.should == 56
+    end
+    
+    it "adds multiple related objects - new object" do
+      attrs = {:authors => {"0" => {:name => "Judy Newbie"}, "1" => {:name => "Johnny Bonny"}}, :title => "new title"}
+      lambda do
+        @entry = Entry.create(attrs)
+      end.should change(Author, :count).by(2)
+      Entry.find(@entry.id).authors.map(&:name).should include("Judy Newbie")
+      Entry.find(@entry.id).authors.map(&:name).should include("Johnny Bonny")
+    end
+    
+    it "adds a related object - existing object" do
+      attrs = {:authors => {"0" => {:name => author.name}}, :title => "new title"}
       lambda do
         @entry = Entry.create(attrs)
       end.should_not change(Author, :count).by(1)
-      Entry.find(@entry.id).author.should == author
+      Entry.find(@entry.id).authors.first.should == author
+    end
+    
+    it "adds a related exiting object with extra attributes" do
+      attrs = {:authors => {"0" => {:name => author.name, :age => 72}}, :title => "new title"}
+      entry = Entry.create(attrs)
+      Entry.find(entry.id).authors.first.name.should == author.name
+      Entry.find(entry.id).authors.first.age.should == 72
+    end
+    
+    it "adds multiple related objects - one new object, one existing object" do
+      attrs = {:authors => {"0" => {:name => author.name}, "1" => {:name => "Johnny Bonny"}}, :title => "new title"}
+      lambda do
+        @entry = Entry.create(attrs)
+      end.should change(Author, :count).by(1)
+      Entry.find(@entry.id).authors.map(&:name).should include("Johnny Bonny")
+      Entry.find(@entry.id).authors.map(&:name).should include(author.name)
     end
     
   end
@@ -85,28 +117,58 @@ describe GraphModel::Node do
       neo4j_obj.respond_to?(:no_attr).should be_false
     end
     
-    it "adds a related object using a related field finder - new object" do
-      attrs = {:author_name => "Jane McNeverexisted"}
+    it "adds a related object - new object" do
+      attrs = {:authors => {"0" => {:name => "Jane McNeverexisted"}}}
       lambda do
         entry.update(attrs)
       end.should change(Author, :count).by(1)
-      Entry.find(entry.id).author.should == Author.find_first_by_name("Jane McNeverexisted")
+      Entry.find(entry.id).authors.first.should == Author.find_first_by_name("Jane McNeverexisted")
     end
     
-    it "adds a related object using a related field finder - existing object" do
-      attrs = {:author_name => author.name}
+    it "adds multiple related objects - new objects" do
+      attrs = {:authors => {"0" => {:name => "Jane McNeverexisted"}, "1" => {:name => "Steven Klancefeather"}}}
+      lambda do
+        entry.update(attrs)
+      end.should change(Author, :count).by(2)
+      Entry.find(entry.id).authors.map(&:name).should include("Jane McNeverexisted")
+      Entry.find(entry.id).authors.map(&:name).should include("Steven Klancefeather")
+    end
+    
+    it "adds a related object - existing object" do
+      attrs = {:authors => {"0" => {:name => author.name}}}
       lambda do
         entry.update(attrs)
       end.should_not change(Author, :count).by(1)
-      Entry.find(entry.id).author.should == author
+      Entry.find(entry.id).authors.first.should == author
     end
     
-    it "replaces a related object with another one" do
+    it "adds multiple related objects - one new object, one existing" do
+      attrs = {:authors => {"0" => {:name => "Jane McNeverexisted"}, "1" => {:name => author2.name}}}
+      lambda do
+        entry.update(attrs)
+      end.should change(Author, :count).by(1)
+      Entry.find(entry.id).authors.map(&:name).should include("Jane McNeverexisted")
+      Entry.find(entry.id).authors.map(&:name).should include(author2.name)
+    end
+    
+    it "remove a related object" do
       entry.add_written_by(author)
-      attrs = {:author_name => author2.name}
+      entry.add_written_by(author2)
+      entry.authors.count.should == 2
+      attrs = {:authors => {"0" => {:name => author.name, :_destroy => 1}}}
       entry.update(attrs)
-      Entry.find(entry.id).author.should == author2
-      Entry.find(entry.id).written_by_nodes.size.should == 1
+      Entry.find(entry.id).authors.count.should == 1
+      Entry.find(entry.id).authors.map(&:name).should_not include(author.name)
+    end
+    
+    it "don't remove a related object" do
+      entry.add_written_by(author)
+      entry.add_written_by(author2)
+      entry.authors.count.should == 2
+      attrs = {:authors => {"0" => {:name => author.name, :_destroy => 0}}}
+      entry.update(attrs)
+      Entry.find(entry.id).authors.count.should == 2
+      Entry.find(entry.id).authors.map(&:name).should include(author.name)
     end
     
   end

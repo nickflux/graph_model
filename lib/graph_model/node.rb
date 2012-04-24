@@ -196,15 +196,15 @@ module GraphModel
       end
     
       def allowed_attributes
-        @allowed_attributes ||= new_attributes.select {|key, value| attributes.has_key?(key) }
+        @allowed_attributes ||= new_attributes.select {|key, value| attributes.has_key?(key) }.stringify_keys!
       end
 
       def related_attributes
-        @related_attributes ||= new_attributes.select {|key, value| !attributes.has_key?(key) } 
+        @related_attributes ||= new_attributes.select {|key, value| !attributes.has_key?(key) }.stringify_keys!
       end
 
       def reset_related_attributes
-        @related_attributes = new_attributes.select {|key, value| !attributes.has_key?(key) } 
+        @related_attributes = new_attributes.select {|key, value| !attributes.has_key?(key) }.stringify_keys!
       end
     
       # create relationship

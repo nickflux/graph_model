@@ -11,7 +11,7 @@ module GraphModel
         :port         => 7474,
         :log_enabled  => true,
         :log_file     => "spec/support/log/neography.log",
-        :cypher_pat   => "/ext/CypherPlugin/graphdb/execute_query"
+        :cypher_path  => "/ext/CypherPlugin/graphdb/execute_query"
         }.merge(connection_options))
       end
 

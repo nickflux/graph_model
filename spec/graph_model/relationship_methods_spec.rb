@@ -22,11 +22,8 @@ describe GraphModel::RelationshipMethods do
         author.written.class.should be(Neography::NodeTraverser)
       end
     
-      it "have the expected defined convenience methods based on the [:only] option" do
+      it "have the expected defined convenience methods based on the [:with] option" do
         author.respond_to?(:entries).should be_true
-        author.respond_to?(:entry).should be_true
-        author.respond_to?(:entry_title).should be_true
-        author.respond_to?(:entry_title=).should be_true
       end
       
     end
@@ -47,13 +44,6 @@ describe GraphModel::RelationshipMethods do
     
       it "have the expected defined convenience methods based on the [:only] option" do
         author_new.respond_to?(:entries).should be_true
-        author_new.respond_to?(:entry).should be_true
-        author_new.respond_to?(:entry_title).should be_true
-        author_new.respond_to?(:entry_title=).should be_true
-      end
-      
-      it "should return nil for convenience method", :focus do
-        author_new.entry_title.should be_nil
       end
       
     end

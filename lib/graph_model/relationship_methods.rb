@@ -60,9 +60,9 @@ module GraphModel
         # for relationship :friends - add_friends(other_node)
         define_method "add_#{relationship_definition.name.to_s}" do |other_node|
           
-          if relationship_definition[:only] && !relationship_definition[:only].include?(other_node.class)
+          if relationship_definition[:with] != other_node.class
             msg = "cannot add a node of type #{other_node.class.to_s} to the #{relationship_definition.name.to_s} relationship. "
-            msg +=  "Only #{relationship_definition[:only].map{|klass| klass.to_s}.join(' or ')} nodes allowed."
+            msg +=  "Only #{relationship_definition[:with].name} nodes allowed."
             raise GraphModel::RelationshipError, msg
           end
         
@@ -85,45 +85,15 @@ module GraphModel
           
         end
       
-        # alias methods for specified related models
-        if relationship_definition[:only]
-          relationship_definition[:only].each do |klass|
+        # alias methods for related models
         
-            # get all the node objects for this klass
-            # for relationship :friends that are Doctor type - doctors
-            define_method klass.to_s.tableize do
-              if related_nodes = send("#{relationship_definition.name.to_s}_nodes")
-                related_nodes
-              else
-                []
-              end
-            end
-          
-            # get first node objects for this klass
-            # for relationship :friends that are Doctor type - doctor
-            define_method klass.to_s.underscore do
-              if related_node = send(klass.to_s.tableize).first
-                related_node
-              else
-                klass.new
-              end
-            end
-          
-            # convenience methods for creating related form inputs
-            klass.attributes.each_key do |attribute_name|
-            
-              # read related attribute
-              define_method "#{klass.to_s.underscore}_#{attribute_name}" do
-                send(klass.to_s.underscore).send(attribute_name.to_sym)
-              end
-            
-              # write related attribute
-              define_method "#{klass.to_s.underscore}_#{attribute_name}=" do |attribute_value|
-                puts "WRITING #{klass.to_s.underscore}_#{attribute_name} with #{attribute_value}"
-              end
-            
-            end
-        
+        # get all the node objects for this klass
+        # for relationship :friends that are Doctor type - doctors
+        define_method relationship_definition[:with].to_s.tableize do
+          if related_nodes = send("#{relationship_definition.name.to_s}_nodes")
+            related_nodes
+          else
+            []
           end
         end
 
@@ -137,7 +107,7 @@ module GraphModel
         "instance relationships"
       end
       
-      # the assumption here is that all relationships are one-to-one
+      # the assumption here is that all relationships are many-to-many
       # as far as Neography / Neo4J is concerned this needn't be the case, but it's a good starting point
       def manage_relationships
         self.class.relationships.each do |relationship_definition|
@@ -147,52 +117,44 @@ module GraphModel
       
       # manage a specific relationship
       def manage_relationship(relationship_definition)
-        relationship_definition[:only].each do |related_klass|
-          # relationship keys are the fields to find a related object on
-          # they are the intersection of the relation object fields and the attributes sent to make the relationship
-          realtionship_keys = related_klass.attributes.keys.map{|a| "#{related_klass.to_s.underscore}_#{a}"} & related_attributes.keys
+        related_klass = relationship_definition[:with]
+          
+        # do this related_klass match any of the related_attributes.keys
+        return false unless related_attributes.keys.include?(related_klass.to_s.tableize) 
+        
+        # loop through attribute hashes for this related_klass
+        related_attributes[related_klass.to_s.tableize].each do |_, related_klass_attributes|
+          
+          related_klass_attributes.stringify_keys!
 
-          if realtionship_keys.size > 0
-            # we are attempting to make a relationship
-            # currently this is only done on the first relationship key
-            # we are assuming that only is being sent, but again this need not be the case
-            # in future we could use `realtionship_keys.each do |realtionship_key|; end`
-            realtionship_key  = realtionship_keys.first
-            
-            # update `relationship_definition.name` on `realtionship_key`
-            
-            related_attribute_key   = realtionship_key.gsub("#{related_klass.to_s.underscore}_", "")
-            new_related_object      = related_klass.send("find_first_by_#{related_attribute_key}", related_attributes[realtionship_key])
-      
-            # if this related object does not exist yet create it
-            new_related_object  ||= related_klass.create(related_attribute_key => related_attributes[realtionship_key])
-            
-            make_relationship(relationship_definition, new_related_object) if new_related_object.persisted?
- 
-          else
-            # nothing to do for `relationship_definition.name`
+          # we are attempting to make a relationship by searching the :on_field option of the relationship
+          realtionship_key    = relationship_definition[:on_field].to_s
+          new_related_object  = related_klass.send("find_first_by_#{realtionship_key}", related_klass_attributes[realtionship_key]) ||
+            related_klass.create(realtionship_key => related_klass_attributes[realtionship_key])
+          
+          # is this relationship due to be destroyed?
+          if related_klass_attributes["_destroy"].to_i == 1
+            # remove relationship
+            send("remove_#{relationship_definition.name.to_s}", new_related_object)
+            next
           end
           
+          # update the related object if there are other attributes
+          new_related_object.update(related_klass_attributes)
+          
+          make_relationship(relationship_definition, new_related_object) if new_related_object.persisted?
+          
         end
+          
           
       end
       
       def make_relationship(relationship_definition, new_related_object)
-        
-        # does the relationship exist yet?
-        if send("#{relationship_definition.name.to_s}_nodes").count > 0
-          # if the relationship already with the new_related_object, do nothing
-          # otherwise delete the rlationship and add the new_related_object
-          current_related_object = send("#{relationship_definition.name.to_s}_nodes").first
-          unless current_related_object == new_related_object
-            send("remove_#{relationship_definition.name.to_s}", current_related_object)
-            send("add_#{relationship_definition.name.to_s}", new_related_object)
-          end
-        else
-          # a relationship named 'relationship_definition.name' does not exist - create it
+        nodes = send("#{relationship_definition.name.to_s}_nodes")
+        # make the relationship if it does not aleady exist
+        unless send("#{relationship_definition.name.to_s}_nodes").map(&:id).include?(new_related_object.id)
           send("add_#{relationship_definition.name.to_s}", new_related_object)
         end
-        
       end
       
     end

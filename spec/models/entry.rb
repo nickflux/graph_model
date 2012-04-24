@@ -5,6 +5,6 @@ class Entry
   attribute  :title, type: String
   validates :title, :presence => true
   
-  relationship_in :written_by, :only => [Author]
+  relationship_in :written_by, :with => Author, :on_field => :name
   
 end
