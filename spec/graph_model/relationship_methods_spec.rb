@@ -42,8 +42,9 @@ describe GraphModel::RelationshipMethods do
         author_new.written.class.should be(Neography::NodeTraverser)
       end
     
-      it "have the expected defined convenience methods based on the [:only] option" do
+      it "have the expected defined convenience methods based on the [:with] option" do
         author_new.respond_to?(:entries).should be_true
+        author_new.respond_to?(:entries_attributes=).should be_true
       end
       
     end
@@ -69,6 +70,23 @@ describe GraphModel::RelationshipMethods do
       lambda do
         author.add_written(entry2)
       end.should raise_exception(GraphModel::RelationshipError, "Can't add a node to this relationship unless it has first been saved to the database.")
+    end
+    
+  end
+  
+  describe "build_ relationship" do
+    
+    it "should build a related node" do
+      author.build_written
+      author.written_nodes.first.persisted?.should be_false
+    end
+    
+    it "should build a related node in addition to a persisted one" do
+      author.add_written(entry)
+      author.build_written
+      author.written_nodes.size.should == 2
+      author.written_nodes.map(&:persisted?).should include(false)
+      author.written_nodes.map(&:persisted?).should include(true)
     end
     
   end

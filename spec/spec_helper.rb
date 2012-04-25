@@ -2,6 +2,7 @@ SPEC_ROOT = File.expand_path('..', __FILE__)
 require 'graph_model'
 require 'factory_girl'
 require 'log_buddy'
+require 'timecop'
 require "#{SPEC_ROOT}/factories.rb"
 Dir["#{SPEC_ROOT}/support/**/*.rb"].each { |file| require file }
 
@@ -27,6 +28,11 @@ RSpec.configure do |config|
   
   config.before(:each) do
     GraphModel.configuration.conn.clean_database("yes_i_really_want_to_clean_the_database")
+    Timecop.freeze(Time.now)
+  end
+  
+  config.after(:each) do
+    Timecop.return
   end
 
   config.after(:all) do

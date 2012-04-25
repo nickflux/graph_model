@@ -22,6 +22,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency "rspec"
   s.add_development_dependency "factory_girl"
   s.add_development_dependency "log_buddy"
+  s.add_development_dependency "timecop"
   
   s.add_dependency 'active_attr'
   # uncomment this once neography is stable

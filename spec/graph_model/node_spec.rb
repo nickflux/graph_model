@@ -30,7 +30,7 @@ describe GraphModel::Node do
     end
     
     it "adds a related object - new object" do
-      attrs = {:authors => {"0" => {:name => "Judy Newbie"}}, :title => "new title"}
+      attrs = {:authors_attributes => {"0" => {:name => "Judy Newbie"}}, :title => "new title"}
       lambda do
         @entry = Entry.create(attrs)
       end.should change(Author, :count).by(1)
@@ -38,14 +38,14 @@ describe GraphModel::Node do
     end
     
     it "adds a related object with extra attributes" do
-      attrs = {:authors => {"0" => {:name => "Judy Newbie", :age => 56}}, :title => "new title"}
+      attrs = {:authors_attributes => {"0" => {:name => "Judy Newbie", :age => 56}}, :title => "new title"}
       entry = Entry.create(attrs)
       Entry.find(entry.id).authors.first.name.should == "Judy Newbie"
       Entry.find(entry.id).authors.first.age.should == 56
     end
     
     it "adds multiple related objects - new object" do
-      attrs = {:authors => {"0" => {:name => "Judy Newbie"}, "1" => {:name => "Johnny Bonny"}}, :title => "new title"}
+      attrs = {:authors_attributes => {"0" => {:name => "Judy Newbie"}, "1" => {:name => "Johnny Bonny"}}, :title => "new title"}
       lambda do
         @entry = Entry.create(attrs)
       end.should change(Author, :count).by(2)
@@ -54,7 +54,7 @@ describe GraphModel::Node do
     end
     
     it "adds a related object - existing object" do
-      attrs = {:authors => {"0" => {:name => author.name}}, :title => "new title"}
+      attrs = {:authors_attributes => {"0" => {:name => author.name}}, :title => "new title"}
       lambda do
         @entry = Entry.create(attrs)
       end.should_not change(Author, :count).by(1)
@@ -62,14 +62,14 @@ describe GraphModel::Node do
     end
     
     it "adds a related exiting object with extra attributes" do
-      attrs = {:authors => {"0" => {:name => author.name, :age => 72}}, :title => "new title"}
+      attrs = {:authors_attributes => {"0" => {:name => author.name, :age => 72}}, :title => "new title"}
       entry = Entry.create(attrs)
       Entry.find(entry.id).authors.first.name.should == author.name
       Entry.find(entry.id).authors.first.age.should == 72
     end
     
     it "adds multiple related objects - one new object, one existing object" do
-      attrs = {:authors => {"0" => {:name => author.name}, "1" => {:name => "Johnny Bonny"}}, :title => "new title"}
+      attrs = {:authors_attributes => {"0" => {:name => author.name}, "1" => {:name => "Johnny Bonny"}}, :title => "new title"}
       lambda do
         @entry = Entry.create(attrs)
       end.should change(Author, :count).by(1)
@@ -118,7 +118,7 @@ describe GraphModel::Node do
     end
     
     it "adds a related object - new object" do
-      attrs = {:authors => {"0" => {:name => "Jane McNeverexisted"}}}
+      attrs = {:authors_attributes => {"0" => {:name => "Jane McNeverexisted"}}}
       lambda do
         entry.update(attrs)
       end.should change(Author, :count).by(1)
@@ -126,7 +126,7 @@ describe GraphModel::Node do
     end
     
     it "adds multiple related objects - new objects" do
-      attrs = {:authors => {"0" => {:name => "Jane McNeverexisted"}, "1" => {:name => "Steven Klancefeather"}}}
+      attrs = {:authors_attributes => {"0" => {:name => "Jane McNeverexisted"}, "1" => {:name => "Steven Klancefeather"}}}
       lambda do
         entry.update(attrs)
       end.should change(Author, :count).by(2)
@@ -135,7 +135,7 @@ describe GraphModel::Node do
     end
     
     it "adds a related object - existing object" do
-      attrs = {:authors => {"0" => {:name => author.name}}}
+      attrs = {:authors_attributes => {"0" => {:name => author.name}}}
       lambda do
         entry.update(attrs)
       end.should_not change(Author, :count).by(1)
@@ -143,7 +143,7 @@ describe GraphModel::Node do
     end
     
     it "adds multiple related objects - one new object, one existing" do
-      attrs = {:authors => {"0" => {:name => "Jane McNeverexisted"}, "1" => {:name => author2.name}}}
+      attrs = {:authors_attributes => {"0" => {:name => "Jane McNeverexisted"}, "1" => {:name => author2.name}}}
       lambda do
         entry.update(attrs)
       end.should change(Author, :count).by(1)
@@ -155,7 +155,7 @@ describe GraphModel::Node do
       entry.add_written_by(author)
       entry.add_written_by(author2)
       entry.authors.count.should == 2
-      attrs = {:authors => {"0" => {:name => author.name, :_destroy => 1}}}
+      attrs = {:authors_attributes => {"0" => {:name => author.name, :_destroy => 1}}}
       entry.update(attrs)
       Entry.find(entry.id).authors.count.should == 1
       Entry.find(entry.id).authors.map(&:name).should_not include(author.name)
@@ -165,7 +165,7 @@ describe GraphModel::Node do
       entry.add_written_by(author)
       entry.add_written_by(author2)
       entry.authors.count.should == 2
-      attrs = {:authors => {"0" => {:name => author.name, :_destroy => 0}}}
+      attrs = {:authors_attributes => {"0" => {:name => author.name, :_destroy => 0}}}
       entry.update(attrs)
       Entry.find(entry.id).authors.count.should == 2
       Entry.find(entry.id).authors.map(&:name).should include(author.name)

@@ -53,7 +53,14 @@ module GraphModel
         # see all the node objects at the other end of this relationship
         # for relationship :friends - friends_nodes
         define_method "#{relationship_definition.name.to_s}_nodes" do
-          send(relationship_definition.name).map{|node| eval(node.object_type).find(node.neo_id) }
+          persisted_nodes = send(relationship_definition.name).map{|node| eval(node.object_type).find(node.neo_id) }
+          persisted_nodes + built_nodes
+        end
+        
+        # build an un-persisted node from the :with option
+        # for relationship :friends - build_friends
+        define_method "build_#{relationship_definition.name.to_s}" do
+          built_nodes.push(relationship_definition[:with].new)
         end
       
         # add a new node object to the relationship
@@ -96,6 +103,13 @@ module GraphModel
             []
           end
         end
+        
+        # assign all the node objects for this klass
+        # for relationship :friends that are Doctor type - doctors_attributes(attributes)
+        # does nothing at the moment - allows for use of fields_for helper
+        define_method "#{relationship_definition[:with].to_s.tableize}_attributes=" do |attributes|
+          # STUB
+        end
 
       end
       
@@ -105,6 +119,10 @@ module GraphModel
       
       def relationships
         "instance relationships"
+      end
+      
+      def built_nodes
+        @built_nodes ||= []
       end
       
       # the assumption here is that all relationships are many-to-many
@@ -118,12 +136,13 @@ module GraphModel
       # manage a specific relationship
       def manage_relationship(relationship_definition)
         related_klass = relationship_definition[:with]
-          
+        attributes_key  = "#{related_klass.to_s.tableize}_attributes"
+        
         # do this related_klass match any of the related_attributes.keys
-        return false unless related_attributes.keys.include?(related_klass.to_s.tableize) 
+        return false unless related_attributes.keys.include?(attributes_key) 
         
         # loop through attribute hashes for this related_klass
-        related_attributes[related_klass.to_s.tableize].each do |_, related_klass_attributes|
+        related_attributes[attributes_key].each do |_, related_klass_attributes|
           
           related_klass_attributes.stringify_keys!
 
