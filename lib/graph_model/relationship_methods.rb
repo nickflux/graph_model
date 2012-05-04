@@ -48,19 +48,23 @@ module GraphModel
             Neography::Relationship.load(GraphModel.configuration.conn, rel_id)
           end.first
           
-        end
+        end        
       
+        define_method "built_#{relationship_definition[:with].name.tableize.singularize}_nodes" do
+          eval("@built_#{relationship_definition[:with].name.tableize.singularize}_nodes ||= []")
+        end
+        
         # see all the node objects at the other end of this relationship
         # for relationship :friends - friends_nodes
         define_method "#{relationship_definition.name.to_s}_nodes" do
           persisted_nodes = send(relationship_definition.name).map{|node| eval(node.object_type).find(node.neo_id) }
-          persisted_nodes + built_nodes
+          persisted_nodes + eval("built_#{relationship_definition[:with].name.tableize.singularize}_nodes")
         end
         
         # build an un-persisted node from the :with option
         # for relationship :friends - build_friends
         define_method "build_#{relationship_definition.name.to_s}" do
-          built_nodes.push(relationship_definition[:with].new)
+          eval("built_#{relationship_definition[:with].name.tableize.singularize}_nodes").push(relationship_definition[:with].new)
         end
       
         # add a new node object to the relationship
@@ -119,10 +123,6 @@ module GraphModel
       
       def relationships
         "instance relationships"
-      end
-      
-      def built_nodes
-        @built_nodes ||= []
       end
       
       # the assumption here is that all relationships are many-to-many
